@@ -1,7 +1,7 @@
 {
     "name": "Proxy Tester",
     "short_name": "ProxyTester",
-    "description": "Professional proxy testing tool with real-time results",
+    "description": "Proxy testing tool, private and open source",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
