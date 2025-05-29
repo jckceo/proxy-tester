@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-    title: 'Proxy Tester - Professional Proxy Testing Tool',
-    description: 'Test HTTP and SOCKS proxies with real-time results, authentication support, and professional analytics',
+    title: 'Proxy Tester - Private & Open Source',
+    description: 'Test HTTP and SOCKS proxies quickly and privately',
     manifest: '/manifest.json',
     themeColor: '#3b82f6',
     viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
