@@ -182,229 +182,293 @@ export default function ProxyTester() {
         return { completed, remaining, percentage, total: totalProxiesToTest }
     }, [isLoading, results.length, totalProxiesToTest, progressInfo])
 
+    const workingCount = results.filter(r => r.status === 'success').length
+    const failedCount = results.filter(r => r.status === 'error').length
+
     return (
-        <div>
-            <div className="card">
-                <div className="input-group">
-                    <label htmlFor="proxies">
-                        Proxy List (one per line)
-                    </label>
-                    <textarea
-                        id="proxies"
-                        value={proxies}
-                        onChange={(e) => setProxies(e.target.value)}
-                        placeholder="127.0.0.1:8080&#10;192.168.1.1:3128:username:password&#10;socks5://127.0.0.1:1080"
-                        rows={10}
-                        disabled={isLoading}
-                    />
-                    <small className="text-gray-500">
-                        Supported formats: ip:port, ip:port:username:password, socks5://ip:port
-                    </small>
+        <div className="app-container">
+            {/* Header */}
+            <header className="app-header">
+                <div className="header-content">
+                    <div className="logo">
+                        <div className="logo-icon">P</div>
+                        <span>Proxy Tester</span>
+                    </div>
+                    <div className="header-badge">Private & Open Source</div>
                 </div>
+            </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
-                    <div className="input-group">
-                        <label htmlFor="testUrl">Test URL</label>
-                        <input
-                            id="testUrl"
-                            type="url"
-                            value={testUrl}
-                            onChange={(e) => setTestUrl(e.target.value)}
-                            placeholder="http://httpbin.org/ip"
-                            disabled={isLoading}
-                        />
+            {/* Main Content */}
+            <main className="main-content">
+                {/* Left Panel - Controls */}
+                <div className="controls-panel">
+                    <div className="panel-header">
+                        <h2 className="panel-title">Configuration</h2>
+                        <p className="panel-subtitle">Set up your proxy testing parameters</p>
                     </div>
 
-                    <div className="input-group">
-                        <label htmlFor="timeout">Timeout (seconds)</label>
-                        <input
-                            id="timeout"
-                            type="number"
-                            value={timeout}
-                            onChange={(e) => setTimeout(Number(e.target.value))}
-                            min={1}
-                            max={60}
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div className="input-group">
-                        <label htmlFor="workers">Workers</label>
-                        <input
-                            id="workers"
-                            type="number"
-                            value={workers}
-                            onChange={(e) => setWorkers(Math.max(1, Math.min(50, Number(e.target.value))))}
-                            min={1}
-                            max={50}
-                            disabled={isLoading}
-                        />
-                        <small className="text-gray-500">1-50 workers</small>
-                    </div>
-
-                    <div className="input-group">
-                        <label htmlFor="protocol">Protocol</label>
-                        <div className="flex items-center gap-2 mt-2">
-                            <button
-                                type="button"
-                                onClick={toggleProtocol}
+                    <div className="panel-content">
+                        {/* Proxy List */}
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="proxies">
+                                Proxy List
+                            </label>
+                            <textarea
+                                id="proxies"
+                                className="form-textarea"
+                                value={proxies}
+                                onChange={(e) => setProxies(e.target.value)}
+                                placeholder="127.0.0.1:8080&#10;192.168.1.1:3128:username:password&#10;socks5://127.0.0.1:1080"
+                                rows={8}
                                 disabled={isLoading}
-                                className={`btn ${useHttps ? 'btn-primary' : ''}`}
-                                style={!useHttps ? { backgroundColor: '#10b981', color: 'white' } : {}}
+                            />
+                            <div className="form-help">
+                                Supported formats: ip:port, ip:port:username:password, socks5://ip:port
+                            </div>
+                        </div>
+
+                        {/* Test URL */}
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="testUrl">Test URL</label>
+                            <input
+                                id="testUrl"
+                                className="form-input"
+                                type="url"
+                                value={testUrl}
+                                onChange={(e) => setTestUrl(e.target.value)}
+                                placeholder="http://httpbin.org/ip"
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        {/* Settings Grid */}
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="timeout">Timeout (seconds)</label>
+                                <input
+                                    id="timeout"
+                                    className="form-input"
+                                    type="number"
+                                    value={timeout}
+                                    onChange={(e) => setTimeout(Number(e.target.value))}
+                                    min={1}
+                                    max={60}
+                                    disabled={isLoading}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="workers">Workers</label>
+                                <input
+                                    id="workers"
+                                    className="form-input"
+                                    type="number"
+                                    value={workers}
+                                    onChange={(e) => setWorkers(Math.max(1, Math.min(50, Number(e.target.value))))}
+                                    min={1}
+                                    max={50}
+                                    disabled={isLoading}
+                                />
+                                <div className="form-help">1-50 concurrent workers</div>
+                            </div>
+                        </div>
+
+                        {/* Protocol Toggle */}
+                        <div className="form-group">
+                            <label className="form-label">Protocol</label>
+                            <div className="protocol-toggle">
+                                <button
+                                    type="button"
+                                    onClick={() => !useHttps && toggleProtocol()}
+                                    disabled={isLoading}
+                                    className={`protocol-option ${!useHttps ? 'active' : ''}`}
+                                >
+                                    HTTP
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => useHttps && toggleProtocol()}
+                                    disabled={isLoading}
+                                    className={`protocol-option ${useHttps ? 'active' : ''}`}
+                                >
+                                    HTTPS
+                                </button>
+                            </div>
+                            <div className="form-help">
+                                {useHttps ? 'SSL errors possible with some proxies' : 'Recommended for better compatibility'}
+                            </div>
+                        </div>
+
+                        {/* Info Cards */}
+                        <div className="info-card info-card-performance">
+                            <div className="info-card-title">⚡ High Performance</div>
+                            <div>Using {workers} concurrent workers for fast testing with real-time results.</div>
+                        </div>
+
+                        <div className="info-card info-card-tip">
+                            <div className="info-card-title">💡 Pro Tip</div>
+                            <div>Use HTTP for better compatibility. Many proxies don't support HTTPS tunneling.</div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="btn-group">
+                            {!isLoading ? (
+                                <button
+                                    onClick={handleTest}
+                                    className="btn btn-primary"
+                                    style={{ width: '100%' }}
+                                >
+                                    🚀 Start Testing ({workers} Workers)
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleStop}
+                                    className="btn btn-danger"
+                                    style={{ width: '100%' }}
+                                >
+                                    🛑 Stop Testing
+                                </button>
+                            )}
+
+                            <button
+                                onClick={handleClear}
+                                disabled={isLoading}
+                                className="btn btn-secondary"
+                                style={{ width: '100%' }}
                             >
-                                {useHttps ? 'HTTPS' : 'HTTP'}
+                                🗑️ Clear All
                             </button>
-                            <small className="text-gray-500">
-                                {useHttps ? 'SSL errors possible' : 'Recommended'}
-                            </small>
                         </div>
                     </div>
                 </div>
 
-                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-700">
-                        💡 <strong>Tip:</strong> If you get SSL/HTTPS errors, try using HTTP instead of HTTPS for testing.
-                        Many HTTP proxies don't support HTTPS tunneling properly.
-                    </p>
-                </div>
-
-                <div className="flex gap-2">
-                    {!isLoading ? (
-                        <button
-                            onClick={handleTest}
-                            className="btn btn-primary"
-                        >
-                            Start Testing ({workers} Workers)
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleStop}
-                            className="btn"
-                            style={{ backgroundColor: '#ef4444', color: 'white' }}
-                        >
-                            🛑 Stop Testing
-                        </button>
-                    )}
-
-                    <button
-                        onClick={handleClear}
-                        disabled={isLoading}
-                        className="btn"
-                        style={{ backgroundColor: '#6b7280', color: 'white' }}
-                    >
-                        Clear
-                    </button>
-                </div>
-            </div>
-
-            {(results.length > 0 || isLoading) && (
-                <div className="card">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-bold">
-                            {isLoading ? 'Live Results' : 'Test Results'}
+                {/* Right Panel - Results */}
+                <div className="results-panel">
+                    <div className="results-header">
+                        <h2 className="results-title">
+                            {isLoading ? '🔄 Live Results' : '📊 Test Results'}
                         </h2>
-                        <div className="text-sm text-gray-600">
-                            ✅ {results.filter(r => r.status === 'success').length} working /
-                            ❌ {results.filter(r => r.status === 'error').length} failed /
-                            📊 {results.length} total
-                            {progress && isLoading && ` (${progress.total - progress.completed} remaining)`}
+                        <div className="results-stats">
+                            <div className="stat-item stat-success">
+                                <span>✅</span>
+                                <span>{workingCount} working</span>
+                            </div>
+                            <div className="stat-item stat-error">
+                                <span>❌</span>
+                                <span>{failedCount} failed</span>
+                            </div>
+                            <div className="stat-item stat-total">
+                                <span>📊</span>
+                                <span>{results.length} total</span>
+                            </div>
                         </div>
                     </div>
 
-                    {testMeta && !isLoading && (
-                        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                    <span className="font-semibold text-gray-700">Processing Time:</span>
-                                    <div className="text-blue-600 font-mono">{formatTime(testMeta.totalTime)}</div>
+                    <div className="results-content">
+                        {/* Meta Stats */}
+                        {testMeta && !isLoading && (
+                            <div className="meta-stats">
+                                <div className="meta-stat">
+                                    <div className="meta-stat-label">Processing Time</div>
+                                    <div className="meta-stat-value meta-stat-time">{formatTime(testMeta.totalTime)}</div>
                                 </div>
-                                <div>
-                                    <span className="font-semibold text-gray-700">Workers Used:</span>
-                                    <div className="text-green-600 font-mono">{testMeta.workersUsed}</div>
+                                <div className="meta-stat">
+                                    <div className="meta-stat-label">Workers Used</div>
+                                    <div className="meta-stat-value meta-stat-workers">{testMeta.workersUsed}</div>
                                 </div>
-                                <div>
-                                    <span className="font-semibold text-gray-700">Success Rate:</span>
-                                    <div className="text-purple-600 font-mono">
+                                <div className="meta-stat">
+                                    <div className="meta-stat-label">Success Rate</div>
+                                    <div className="meta-stat-value meta-stat-rate">
                                         {testMeta.totalProxies > 0 ?
                                             ((testMeta.workingProxies / testMeta.totalProxies) * 100).toFixed(1) + '%'
                                             : 'N/A'}
                                     </div>
                                 </div>
-                                <div>
-                                    <span className="font-semibold text-gray-700">Avg per Proxy:</span>
-                                    <div className="text-orange-600 font-mono">
+                                <div className="meta-stat">
+                                    <div className="meta-stat-label">Avg per Proxy</div>
+                                    <div className="meta-stat-value meta-stat-avg">
                                         {testMeta.totalProxies > 0 ?
                                             formatTime(Math.round(testMeta.totalTime / testMeta.totalProxies))
                                             : 'N/A'}
                                     </div>
                                 </div>
                             </div>
+                        )}
+
+                        {/* Export Button */}
+                        {results.length > 0 && (
+                            <div style={{ padding: '0 1.5rem' }}>
+                                <button
+                                    onClick={exportWorking}
+                                    className="btn btn-success"
+                                    disabled={workingCount === 0}
+                                >
+                                    📋 Export Working Proxies ({workingCount})
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Results Table */}
+                        <div className="results-table-container">
+                            {results.length === 0 && !isLoading ? (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">🎯</div>
+                                    <div className="empty-state-title">Ready to Test Proxies</div>
+                                    <div className="empty-state-description">
+                                        Enter your proxy list and click "Start Testing" to begin
+                                    </div>
+                                </div>
+                            ) : (
+                                <table className="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Proxy</th>
+                                            <th>Status</th>
+                                            <th>Response Time</th>
+                                            <th>Detected IP</th>
+                                            <th>Message</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {results.map((result, index) => (
+                                            <tr key={index}>
+                                                <td className="proxy-cell">{result.proxy}</td>
+                                                <td className="status-cell">
+                                                    <span className={`status-badge ${result.status === 'success' ? 'status-success' : 'status-error'}`}>
+                                                        {result.status === 'success' ? '✅ Working' : '❌ Failed'}
+                                                    </span>
+                                                </td>
+                                                <td className="time-cell">
+                                                    {result.responseTime ? `${result.responseTime}ms` : '-'}
+                                                </td>
+                                                <td className="ip-cell">
+                                                    {result.ip || '-'}
+                                                </td>
+                                                <td className="message-cell">
+                                                    {result.message}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {isLoading && results.length < totalProxiesToTest && (
+                                            <tr>
+                                                <td colSpan={5} className="loading-row">
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                                        <span className="loading-spinner"></span>
+                                                        <span>
+                                                            Testing in progress...
+                                                            {progress && ` (${progress.total - progress.completed} remaining)`}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
-                    )}
-
-                    <div className="mb-4">
-                        <button
-                            onClick={exportWorking}
-                            className="btn"
-                            style={{ backgroundColor: '#10b981', color: 'white' }}
-                            disabled={results.filter(r => r.status === 'success').length === 0}
-                        >
-                            Export Working ({results.filter(r => r.status === 'success').length})
-                        </button>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="proxy-table">
-                            <thead>
-                                <tr>
-                                    <th>Proxy</th>
-                                    <th>Status</th>
-                                    <th>Response Time</th>
-                                    <th>Detected IP</th>
-                                    <th>Message</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {results.map((result, index) => (
-                                    <tr
-                                        key={index}
-                                        className={result.status === 'success' ? 'row-success' : 'row-error'}
-                                    >
-                                        <td className="proxy-cell">{result.proxy}</td>
-                                        <td className="status-cell">
-                                            <span className={result.status === 'success' ? 'status-success' : 'status-error'}>
-                                                {result.status === 'success' ? '✅ Working' : '❌ Failed'}
-                                            </span>
-                                        </td>
-                                        <td className="time-cell">
-                                            {result.responseTime ? `${result.responseTime}ms` : '-'}
-                                        </td>
-                                        <td className="ip-cell">
-                                            {result.ip || '-'}
-                                        </td>
-                                        <td className="message-cell">
-                                            {result.message}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {isLoading && results.length < totalProxiesToTest && (
-                                    <tr>
-                                        <td colSpan={5} className="text-center py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <span className="loading-spinner"></span>
-                                                <span className="text-gray-500">
-                                                    Testing in progress...
-                                                    {progress && ` (${progress.total - progress.completed} remaining)`}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
-            )}
+            </main>
         </div>
     )
 } 
