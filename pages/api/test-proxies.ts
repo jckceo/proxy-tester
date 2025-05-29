@@ -8,6 +8,9 @@ interface ProxyTestRequest {
     workers?: number
 }
 
+// Store active abort controllers globally to ensure cleanup
+const activeAbortControllers = new Set<AbortController>()
+
 // Worker pool implementation with streaming
 async function processProxiesWithWorkersStreaming(
     proxies: string[],
@@ -27,6 +30,12 @@ async function processProxiesWithWorkersStreaming(
         while (currentIndex < proxies.length && !signal.aborted) {
             const index = currentIndex++
             const proxy = proxies[index]
+
+            // Check abort signal before starting test
+            if (signal.aborted) {
+                console.log(`Worker ${workerId} aborted before testing proxy ${index + 1}`)
+                break
+            }
 
             try {
                 console.log(`Worker ${workerId} testing proxy ${index + 1}/${proxies.length}: ${proxy}`)
@@ -79,19 +88,31 @@ export default async function handler(
     }
 
     const abortController = new AbortController()
-    req.on('close', () => {
-        console.log('Client disconnected, aborting test from API handler')
+    activeAbortControllers.add(abortController)
+
+    // Cleanup function
+    const cleanup = () => {
+        console.log('Cleaning up abort controller')
         abortController.abort()
-    })
+        activeAbortControllers.delete(abortController)
+    }
+
+    // Handle various disconnect scenarios
+    req.on('close', cleanup)
+    req.on('error', cleanup)
+    res.on('close', cleanup)
+    res.on('error', cleanup)
 
     try {
         const { proxies, testUrl, timeout, workers = 10 }: ProxyTestRequest = req.body
 
         if (!proxies || !Array.isArray(proxies) || proxies.length === 0) {
+            cleanup()
             return res.status(400).json({ error: 'Proxies array is required' })
         }
 
         if (!testUrl) {
+            cleanup()
             return res.status(400).json({ error: 'Test URL is required' })
         }
 
@@ -115,14 +136,19 @@ export default async function handler(
             const streamData = JSON.stringify({
                 type: 'result',
                 result,
-                index
+                index,
+                progress: {
+                    completed: completedResults.length,
+                    total: proxies.length,
+                    percentage: (completedResults.length / proxies.length) * 100
+                }
             }) + '\n'
 
             try {
                 res.write(streamData)
             } catch (e) {
                 console.error("Error writing to response stream:", e)
-                abortController.abort() // Abort if stream is broken
+                cleanup() // Abort if stream is broken
             }
         }
 
@@ -139,6 +165,7 @@ export default async function handler(
         if (abortController.signal.aborted) {
             console.log("Test was aborted, skipping final meta send.")
             if (!res.writableEnded) res.end()
+            cleanup()
             return
         }
 
@@ -164,6 +191,8 @@ export default async function handler(
             res.end()
         }
 
+        cleanup()
+
     } catch (error) {
         if (!abortController.signal.aborted) {
             console.error('Error in proxy test API:', error)
@@ -182,5 +211,7 @@ export default async function handler(
             res.write(errorData)
             res.end()
         }
+
+        cleanup()
     }
 } 

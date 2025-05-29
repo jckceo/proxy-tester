@@ -17,6 +17,12 @@ interface TestMeta {
     workingProxies: number
 }
 
+interface ProgressInfo {
+    completed: number
+    total: number
+    percentage: number
+}
+
 export default function ProxyTester() {
     const [proxies, setProxies] = useState('')
     const [testUrl, setTestUrl] = useState('http://httpbin.org/ip')
@@ -27,6 +33,7 @@ export default function ProxyTester() {
     const [testMeta, setTestMeta] = useState<TestMeta | null>(null)
     const [totalProxiesToTest, setTotalProxiesToTest] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
+    const [progressInfo, setProgressInfo] = useState<ProgressInfo | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
 
     const handleTest = async () => {
@@ -40,6 +47,7 @@ export default function ProxyTester() {
         setResults([])
         setTestMeta(null)
         setTotalProxiesToTest(proxyList.length)
+        setProgressInfo({ completed: 0, total: proxyList.length, percentage: 0 })
 
         // Create abort controller for stopping the test
         abortControllerRef.current = new AbortController()
@@ -82,11 +90,16 @@ export default function ProxyTester() {
                                 const data = JSON.parse(line)
                                 if (data.type === 'result') {
                                     setResults(prev => [...prev, data.result])
+                                    // Update progress if provided in the stream
+                                    if (data.progress) {
+                                        setProgressInfo(data.progress)
+                                    }
                                 } else if (data.type === 'complete') {
                                     setTestMeta(data.meta)
+                                    setProgressInfo(null)
                                 }
                             } catch (e) {
-                                // Ignore parsing errors for non-JSON lines
+                                console.error('Error parsing line:', line, e)
                             }
                         }
                     }
@@ -95,20 +108,23 @@ export default function ProxyTester() {
         } catch (error: any) {
             if (error.name === 'AbortError') {
                 console.log('Test was stopped by user')
+                // Keep the results we have so far
             } else {
                 console.error('Error testing proxies:', error)
-                alert('Error while testing proxies')
+                alert('Error while testing proxies: ' + error.message)
             }
         } finally {
             setIsLoading(false)
+            setProgressInfo(null)
             abortControllerRef.current = null
         }
     }
 
     const handleStop = () => {
         if (abortControllerRef.current) {
+            console.log('Stopping test...')
             abortControllerRef.current.abort()
-            setIsLoading(false)
+            // The finally block in handleTest will handle cleanup
         }
     }
 
@@ -117,6 +133,7 @@ export default function ProxyTester() {
         setResults([])
         setTestMeta(null)
         setTotalProxiesToTest(0)
+        setProgressInfo(null)
     }
 
     const getWorkingProxies = () => {
@@ -153,12 +170,17 @@ export default function ProxyTester() {
     }
 
     const progress = useMemo(() => {
+        // Use progressInfo if available (real-time updates from stream)
+        if (progressInfo) {
+            return progressInfo
+        }
+        // Fallback to calculating from results
         if (!isLoading && !totalProxiesToTest) return null
         const completed = results.length
         const remaining = totalProxiesToTest - completed
         const percentage = totalProxiesToTest > 0 ? (completed / totalProxiesToTest) * 100 : 0
         return { completed, remaining, percentage, total: totalProxiesToTest }
-    }, [isLoading, results, totalProxiesToTest])
+    }, [isLoading, results.length, totalProxiesToTest, progressInfo])
 
     return (
         <div>
@@ -180,7 +202,7 @@ export default function ProxyTester() {
                     </small>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
                     <div className="input-group">
                         <label htmlFor="testUrl">Test URL</label>
                         <input
@@ -239,32 +261,12 @@ export default function ProxyTester() {
                     </div>
                 </div>
 
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-700">
-                        ⚡ <strong>Performance:</strong> Using {workers} concurrent workers for fast proxy testing.
-                        Results will appear in real-time as proxies are tested.
-                    </p>
-                </div>
-
                 <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-sm text-yellow-700">
                         💡 <strong>Tip:</strong> If you get SSL/HTTPS errors, try using HTTP instead of HTTPS for testing.
                         Many HTTP proxies don't support HTTPS tunneling properly.
                     </p>
                 </div>
-
-                {isLoading && progress && (
-                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm font-semibold text-green-700">
-                                🔄 Testing in Progress
-                            </span>
-                            <span className="text-sm text-green-600 font-mono">
-                                {progress.completed}/{progress.total} completed • {progress.remaining} remaining • {progress.percentage.toFixed(1)}%
-                            </span>
-                        </div>
-                    </div>
-                )}
 
                 <div className="flex gap-2">
                     {!isLoading ? (
@@ -305,7 +307,7 @@ export default function ProxyTester() {
                             ✅ {results.filter(r => r.status === 'success').length} working /
                             ❌ {results.filter(r => r.status === 'error').length} failed /
                             📊 {results.length} total
-                            {progress && isLoading && ` (${progress.remaining} remaining)`}
+                            {progress && isLoading && ` (${progress.total - progress.completed} remaining)`}
                         </div>
                     </div>
 
@@ -390,7 +392,10 @@ export default function ProxyTester() {
                                         <td colSpan={5} className="text-center py-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <span className="loading-spinner"></span>
-                                                <span className="text-gray-500">Testing in progress... ({progress?.remaining || 0} remaining)</span>
+                                                <span className="text-gray-500">
+                                                    Testing in progress...
+                                                    {progress && ` (${progress.total - progress.completed} remaining)`}
+                                                </span>
                                             </div>
                                         </td>
                                     </tr>
