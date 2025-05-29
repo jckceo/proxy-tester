@@ -1,0 +1,243 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --foreground-rgb: 255, 255, 255;
+        --background-start-rgb: 0, 0, 0;
+        --background-end-rgb: 0, 0, 0;
+    }
+}
+
+body {
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(to bottom,
+            transparent,
+            rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin-bottom: 2rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.input-group textarea,
+.input-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    background-color: #ffffff;
+    color: #1f2937;
+}
+
+.input-group textarea:focus,
+.input-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-group textarea::placeholder,
+.input-group input::placeholder {
+    color: #9ca3af;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.result-item {
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.result-success {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+}
+
+.result-error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.status-success {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.status-error {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Proxy Table Styles */
+.proxy-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.proxy-table thead {
+    background-color: #f8fafc;
+}
+
+.proxy-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.proxy-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+}
+
+.proxy-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Row color coding */
+.row-success {
+    background-color: #f0fdf4 !important;
+    border-left: 4px solid #10b981;
+}
+
+.row-success:hover {
+    background-color: #dcfce7 !important;
+}
+
+.row-error {
+    background-color: #fef2f2 !important;
+    border-left: 4px solid #ef4444;
+}
+
+.row-error:hover {
+    background-color: #fee2e2 !important;
+}
+
+/* Cell specific styles */
+.proxy-cell {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.status-cell {
+    text-align: center;
+}
+
+.time-cell {
+    text-align: center;
+    font-weight: 500;
+}
+
+.ip-cell {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    color: #6b7280;
+}
+
+.message-cell {
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .proxy-table {
+        font-size: 0.75rem;
+    }
+
+    .proxy-table th,
+    .proxy-table td {
+        padding: 0.5rem;
+    }
+}
